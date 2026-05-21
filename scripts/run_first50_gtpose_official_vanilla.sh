@@ -9,6 +9,7 @@ if [[ ! -d "${DEFAULT_OFFICIAL_REPO}" ]]; then
   DEFAULT_OFFICIAL_REPO="$(cd "${ROOT}/.." && pwd)/gaussian-splatting-official"
 fi
 OFFICIAL_REPO="${OFFICIAL_REPO:-${DEFAULT_OFFICIAL_REPO}}"
+OFFICIAL_PATCH="${OFFICIAL_PATCH:-${ROOT}/patches/gaussian-splatting-official-cu124-compat.patch}"
 
 SRC_DATASET="${SRC_DATASET:-${ROOT}/dataset_market1_1_first50_gtpose_colmapba_notrunc_v2}"
 DATASET_BASENAME="${DATASET_BASENAME:-$(basename "${SRC_DATASET}")}"
@@ -25,6 +26,21 @@ SUMMARY_JSON="${RESULT_ROOT}/${RESULT_PREFIX}_${RUN_TAG}_${SUMMARY_SUFFIX}.json"
 ITERATIONS="${ITERATIONS:-10000}"
 SAVE_ITERS="${SAVE_ITERS:-5000 10000}"
 FORCE_RENDER="${FORCE_RENDER:-1}"
+
+ensure_official_patch() {
+  if [[ ! -f "${OFFICIAL_PATCH}" ]]; then
+    return
+  fi
+  if git -C "${OFFICIAL_REPO}" apply --check "${OFFICIAL_PATCH}" >/dev/null 2>&1; then
+    git -C "${OFFICIAL_REPO}" apply "${OFFICIAL_PATCH}"
+    echo "Applied official compatibility patch at ${OFFICIAL_REPO}"
+    return
+  fi
+  if git -C "${OFFICIAL_REPO}" apply -R --check "${OFFICIAL_PATCH}" >/dev/null 2>&1; then
+    return
+  fi
+  echo "Warning: could not verify compatibility patch state for ${OFFICIAL_REPO}" >&2
+}
 
 prepare_official_dataset() {
   export SRC_DATASET OFFICIAL_DATASET
@@ -195,6 +211,8 @@ with per_view_csv.open("w", newline="") as f:
 summary = {
     "dataset": os.environ["OFFICIAL_DATASET"],
     "source_dataset": os.environ["SRC_DATASET"],
+    "result_dir": str(result_dir),
+    "chunk_name": os.environ.get("CHUNK_NAME"),
     "iterations": iteration,
     "run_tag": os.environ["RUN_TAG"],
     "export_masked": False,
@@ -212,6 +230,7 @@ print(json.dumps(summary, indent=2))
 PY
 }
 
+ensure_official_patch
 prepare_official_dataset
 
 if [[ ! -f "${RESULT_DIR}/point_cloud/iteration_${ITERATIONS}/point_cloud.ply" ]]; then

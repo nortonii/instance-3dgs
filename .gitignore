@@ -29,6 +29,7 @@ rgbd_dataset_*/
 results/
 logs/
 exports/
+chunk_datasets/
 loopsplat_results/
 vings_outputs/
 

@@ -40,6 +40,7 @@ scripts/
   generate_openloris_ignore_masks_sam3.py
   run_first50_gtpose_pkg_compare.sh
   run_first50_gtpose_official_vanilla.sh
+  run_chunked_official_vanilla.sh
 patches/
   gaussian-splatting-official-cu124-compat.patch
 artifacts/summaries/
@@ -94,6 +95,8 @@ git apply ../../patches/gaussian-splatting-official-cu124-compat.patch
 - 兼容 `GaussianRasterizationSettings` 是否包含 `antialiasing` / `projmatrix_raw`
 - 兼容 rasterizer 返回值从 3 个张量扩展到 5 个张量的情况
 
+`run_first50_gtpose_official_vanilla.sh` 也会在运行前自动尝试应用这个 patch。
+
 ## 常用流程
 
 ### 1. 从 fullspan 裁出 first100 子集
@@ -127,6 +130,30 @@ RESULT_SUFFIX=long40k \
 SUMMARY_SUFFIX=40k \
 bash scripts/run_first50_gtpose_official_vanilla.sh
 ```
+
+### 4. 按 100 帧分块训练并拼接
+
+```bash
+PYTHON_BIN=python \
+SRC_DATASET=/path/to/dataset_market1_1_fullspan \
+CHUNK_SIZE=100 \
+VAL_COUNT=10 \
+CHUNK_STRIDE=100 \
+ITERATIONS=40000 \
+SAVE_ITERS="10000 20000 40000" \
+RESULT_PREFIX=market1_1_chunked_official_vanilla \
+RUN_TAG=maskignore \
+RESULT_SUFFIX=long40k \
+SUMMARY_SUFFIX=40k \
+bash scripts/run_chunked_official_vanilla.sh
+```
+
+这个脚本会：
+
+1. 按顺序切出连续 100 帧子集
+2. 对每个子集跑一次官方原版 3DGS
+3. 导出每个 chunk 的 unmasked render
+4. 把所有 chunk 的 render / gt / quality.csv / image_name_map 顺序拼接到一个 stitched 目录
 
 ## 导出与评估约定
 

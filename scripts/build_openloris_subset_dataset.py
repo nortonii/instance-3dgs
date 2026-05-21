@@ -19,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--src-dataset", required=True, type=Path)
     parser.add_argument("--out-dataset", required=True, type=Path)
+    parser.add_argument("--start-image-index", type=int, default=0)
     parser.add_argument("--max-images", type=int, default=50)
     parser.add_argument("--val-count", type=int, default=5)
     parser.add_argument("--pixel-stride", type=int, default=16)
@@ -217,12 +218,21 @@ def main() -> None:
     dst = args.out_dataset
 
     all_items = read_images(src / "sparse" / "0" / "images.txt")
-    if args.max_images > len(all_items):
-        raise ValueError(f"Requested {args.max_images} images, but source dataset only has {len(all_items)}.")
+    if args.start_image_index < 0:
+        raise ValueError("start-image-index must be non-negative.")
+    if args.start_image_index >= len(all_items):
+        raise ValueError(
+            f"start-image-index {args.start_image_index} is out of range for dataset with {len(all_items)} images."
+        )
+    if args.start_image_index + args.max_images > len(all_items):
+        raise ValueError(
+            f"Requested images [{args.start_image_index}, {args.start_image_index + args.max_images}), "
+            f"but source dataset only has {len(all_items)} images."
+        )
     if args.val_count >= args.max_images:
         raise ValueError("val-count must be smaller than max-images.")
 
-    selected = all_items[: args.max_images]
+    selected = all_items[args.start_image_index : args.start_image_index + args.max_images]
     train_names = [item["image_name"] for item in selected[: args.max_images - args.val_count]]
     val_names = [item["image_name"] for item in selected[args.max_images - args.val_count :]]
     train_set = set(train_names)
@@ -264,6 +274,7 @@ def main() -> None:
             {
                 **src_meta,
                 "subset_source_dataset": str(src),
+                "subset_start_image_index": args.start_image_index,
                 "subset_max_images": args.max_images,
                 "subset_val_count": args.val_count,
                 "subset_pixel_stride": args.pixel_stride,
