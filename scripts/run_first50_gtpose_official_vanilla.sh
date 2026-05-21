@@ -4,7 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
-OFFICIAL_REPO="${OFFICIAL_REPO:-$(cd "${ROOT}/.." && pwd)/gaussian-splatting-official}"
+DEFAULT_OFFICIAL_REPO="${ROOT}/third_party/gaussian-splatting-official"
+if [[ ! -d "${DEFAULT_OFFICIAL_REPO}" ]]; then
+  DEFAULT_OFFICIAL_REPO="$(cd "${ROOT}/.." && pwd)/gaussian-splatting-official"
+fi
+OFFICIAL_REPO="${OFFICIAL_REPO:-${DEFAULT_OFFICIAL_REPO}}"
 
 SRC_DATASET="${SRC_DATASET:-${ROOT}/dataset_market1_1_first50_gtpose_colmapba_notrunc_v2}"
 DATASET_BASENAME="${DATASET_BASENAME:-$(basename "${SRC_DATASET}")}"

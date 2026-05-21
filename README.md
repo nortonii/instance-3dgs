@@ -10,6 +10,13 @@ OpenLORIS `market1-1` 的静态重建实验仓库，主要整理了：
 
 这个仓库**不包含原始数据、训练结果和大体量中间产物**；这些目录默认被 `.gitignore` 排除。
 
+为了让仓库更完整，几条核心外部依赖已经作为 git submodule 放在 `third_party/`：
+
+- `third_party/gaussian-splatting-official`
+- `third_party/gaussian-splatting-pkg`
+- `third_party/reduced-3dgs`
+- `third_party/3dgs-mcmc-pkg`
+
 ## 当前结论
 
 在 `market1-1` GT-pose 静态场景上：
@@ -37,6 +44,11 @@ patches/
   gaussian-splatting-official-cu124-compat.patch
 artifacts/summaries/
   *.json
+third_party/
+  gaussian-splatting-official/
+  gaussian-splatting-pkg/
+  reduced-3dgs/
+  3dgs-mcmc-pkg/
 ```
 
 ## 依赖
@@ -46,17 +58,23 @@ Python 依赖见 `requirements.txt`。除此之外还需要：
 1. COLMAP（如果要跑 COLMAP 相关脚本）
 2. 一个可用的 7z 可执行文件，或者安装 `py7zr`
 3. OpenLORIS 原始数据包
-4. 原版官方 3DGS 仓库：`graphdeco-inria/gaussian-splatting`
+4. 初始化 submodule：`git submodule update --init --recursive`
 
-## 推荐目录布局
+## 拉取方式
 
-```text
-work/
-  openloris_market_3dgs_project/
-  gaussian-splatting-official/
+```bash
+git clone --recurse-submodules <your-repo-url>
 ```
 
-默认脚本会把官方仓库当作当前仓库的同级目录：
+如果已经 clone 了主仓库，再执行：
+
+```bash
+git submodule update --init --recursive
+```
+
+默认脚本会优先使用仓库内的 `third_party/gaussian-splatting-official`。
+
+如果你想改成外部路径，也可以手动指定：
 
 ```bash
 export OFFICIAL_REPO=/path/to/gaussian-splatting-official
@@ -67,8 +85,8 @@ export OFFICIAL_REPO=/path/to/gaussian-splatting-official
 本机 `diff_gaussian_rasterization` 接口与官方仓库存在差异，所以需要先打补丁：
 
 ```bash
-cd /path/to/gaussian-splatting-official
-git apply /path/to/openloris_market_3dgs_project/patches/gaussian-splatting-official-cu124-compat.patch
+cd third_party/gaussian-splatting-official
+git apply ../../patches/gaussian-splatting-official-cu124-compat.patch
 ```
 
 这个补丁主要做两件事：
@@ -100,7 +118,6 @@ bash scripts/run_first50_gtpose_pkg_compare.sh
 
 ```bash
 PYTHON_BIN=python \
-OFFICIAL_REPO=/path/to/gaussian-splatting-official \
 SRC_DATASET=/path/to/dataset_market1_1_first100_gtpose \
 RESULT_PREFIX=market1_1_first100_gtpose_official_vanilla \
 RUN_TAG=maskignore \
@@ -125,4 +142,4 @@ bash scripts/run_first50_gtpose_official_vanilla.sh
 ## 说明
 
 - 当前仓库更偏向“实验工作区整理版”，不是一个通用 Python package。
-- 如果要直接推 GitHub，建议只提交脚本、补丁、README 和 `artifacts/summaries/`，不要提交数据集和大体量结果目录。
+- 如果要直接推 GitHub，建议提交脚本、补丁、README、`artifacts/summaries/` 和 `third_party` submodule 元信息，不要提交数据集和大体量结果目录。
