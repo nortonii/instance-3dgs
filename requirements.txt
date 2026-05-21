@@ -1,0 +1,11 @@
+numpy
+Pillow
+opencv-python
+scipy
+py7zr
+torch
+torchvision
+tifffile
+imageio
+transformers
+tqdm

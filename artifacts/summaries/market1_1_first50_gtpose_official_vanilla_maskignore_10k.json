@@ -1,0 +1,15 @@
+{
+  "dataset": "/home/xuzhiyuan/work/openloris_market_3dgs_project/dataset_market1_1_first50_gtpose_colmapba_notrunc_v2_official_rgba_maskignore",
+  "source_dataset": "/home/xuzhiyuan/work/openloris_market_3dgs_project/dataset_market1_1_first50_gtpose_colmapba_notrunc_v2",
+  "iterations": 10000,
+  "run_tag": "maskignore",
+  "export_masked": false,
+  "metric_masked": true,
+  "mask_mode": "ignore_via_premultiplied_rgba",
+  "official_vanilla": {
+    "psnr": 23.53612979888916,
+    "ssim": 0.7471161031723023,
+    "lpips": 0.3451477336883545,
+    "num_views": 50
+  }
+}

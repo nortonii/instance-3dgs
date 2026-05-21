@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Large local datasets and experiment outputs
+dataset_*/
+colmap_*/
+dynamic_masks_*/
+loopsplat_*/
+rtabmap_*/
+vings_*/
+rgbd_dataset_*/
+results/
+logs/
+exports/
+loopsplat_results/
+vings_outputs/
+
+# Binary artifacts
+*.db
+*.ply
+*.pth
+*.ckpt
+*.pt
+*.mp4
+*.tiff
+*.7z
+*.tar
+*.tar.gz
+
+# Temporary files
+.tmp_*.diff
