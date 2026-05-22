@@ -154,6 +154,7 @@ bash scripts/run_chunked_official_vanilla.sh
 2. 对每个子集跑一次官方原版 3DGS
 3. 导出每个 chunk 的 unmasked render
 4. 把所有 chunk 的 render / gt / quality.csv / image_name_map 顺序拼接到一个 stitched 目录
+5. 把所有 chunk 的 `point_cloud.ply` 真正合并成一个 merged 3DGS 模型目录
 
 ## 导出与评估约定
 

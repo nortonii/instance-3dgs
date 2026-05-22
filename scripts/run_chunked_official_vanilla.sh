@@ -22,6 +22,7 @@ RESULT_ROOT="${ROOT}/results"
 CHUNK_DATA_ROOT="${ROOT}/chunk_datasets/${RESULT_PREFIX}_${RUN_TAG}_${RESULT_SUFFIX}"
 STITCH_ROOT="${RESULT_ROOT}/${RESULT_PREFIX}_${RUN_TAG}_${RESULT_SUFFIX}_stitched"
 SUMMARY_JSON="${RESULT_ROOT}/${RESULT_PREFIX}_${RUN_TAG}_${SUMMARY_SUFFIX}_stitched.json"
+MERGED_MODEL_DIR="${RESULT_ROOT}/${RESULT_PREFIX}_${RUN_TAG}_${RESULT_SUFFIX}_merged_3dgs"
 
 mkdir -p "${RESULT_ROOT}" "${CHUNK_DATA_ROOT}"
 
@@ -173,3 +174,8 @@ summary = {
 summary_json.write_text(json.dumps(summary, indent=2))
 print(json.dumps(summary, indent=2))
 PY
+
+"${PYTHON_BIN}" "${ROOT}/scripts/merge_chunked_official_gaussians.py" \
+  --stitched-summary "${SUMMARY_JSON}" \
+  --output-dir "${MERGED_MODEL_DIR}" \
+  --iteration "${ITERATIONS}"
