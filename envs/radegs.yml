@@ -1,0 +1,15 @@
+name: radegs
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - cmake
+  - ninja
+  - make
+  - pkg-config
+  - cxx-compiler
+  - c-compiler
+  - git
+  - cgal
+
