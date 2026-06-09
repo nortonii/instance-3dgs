@@ -81,6 +81,13 @@ def apply_object_pose(vertices: np.ndarray, rotation: np.ndarray, translation: n
     return posed
 
 
+def pointmap_to_radegs_camera(vertices: np.ndarray) -> np.ndarray:
+    converted = vertices.copy()
+    converted[:, 0] *= -1.0
+    converted[:, 1] *= -1.0
+    return converted
+
+
 def transform_to_world(vertices: np.ndarray, c2w: np.ndarray) -> np.ndarray:
     homog = np.concatenate([vertices, np.ones((vertices.shape[0], 1), dtype=vertices.dtype)], axis=1)
     return (homog @ c2w.T)[:, :3]
@@ -132,6 +139,7 @@ def main() -> None:
         if args.world_space:
             if c2w is None:
                 raise KeyError("camera json does not contain c2w")
+            vertices = pointmap_to_radegs_camera(vertices)
             vertices = transform_to_world(vertices, c2w)
 
         posed_mesh = trimesh.Trimesh(
@@ -172,7 +180,7 @@ def main() -> None:
         "mesh_root": str(mesh_root),
         "stage1_root": str(stage1_root) if stage1_root else None,
         "camera_json": str(args.camera_json),
-        "coordinate_system": "world" if args.world_space else "camera",
+        "coordinate_system": "radegs_world" if args.world_space else "sam3d_pointmap_camera",
         "num_instances": len(instances),
         "num_vertices": int(len(scene_mesh.vertices)),
         "num_faces": int(len(scene_mesh.faces)),
