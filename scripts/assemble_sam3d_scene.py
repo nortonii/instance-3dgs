@@ -18,6 +18,12 @@ try:
 except Exception:  # pragma: no cover
     torch = None
 
+try:
+    from pytorch3d.transforms import Transform3d, quaternion_to_matrix as p3d_quaternion_to_matrix
+except Exception:  # pragma: no cover
+    Transform3d = None
+    p3d_quaternion_to_matrix = None
+
 
 def quaternion_to_matrix(quat: np.ndarray) -> np.ndarray:
     q = np.asarray(quat, dtype=np.float64).reshape(-1)
@@ -72,20 +78,29 @@ def load_pose(mesh_dir: Path, stage1_root: Path | None) -> tuple[np.ndarray, np.
     return rotation, translation, scale
 
 
-def apply_object_pose(vertices: np.ndarray, rotation: np.ndarray, translation: np.ndarray, scale: float) -> np.ndarray:
-    center = vertices.mean(axis=0, keepdims=True)
-    rot = quaternion_to_matrix(rotation)
-    posed = (vertices - center) * scale
-    posed = posed @ rot.T
-    posed = posed + center + translation[None, :]
-    return posed
+R_YUP_TO_ZUP = np.array([[-1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]], dtype=np.float32)
+R_FLIP_Z = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]], dtype=np.float32)
+R_PYTORCH3D_TO_CAM = np.array([[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float32)
 
 
-def pointmap_to_radegs_camera(vertices: np.ndarray) -> np.ndarray:
-    converted = vertices.copy()
-    converted[:, 0] *= -1.0
-    converted[:, 1] *= -1.0
-    return converted
+def transform_mesh_vertices_notebook(
+    vertices: np.ndarray, rotation: np.ndarray, translation: np.ndarray, scale: float
+) -> np.ndarray:
+    if torch is None or Transform3d is None or p3d_quaternion_to_matrix is None:
+        raise RuntimeError("pytorch3d and torch are required to match the official SAM3D transform chain")
+
+    verts = torch.tensor(vertices, dtype=torch.float32).unsqueeze(0)
+    verts = verts @ torch.tensor(R_FLIP_Z, dtype=verts.dtype)
+    verts = verts @ torch.tensor(R_YUP_TO_ZUP, dtype=verts.dtype)
+
+    quat = torch.tensor(rotation, dtype=verts.dtype).reshape(-1)
+    quat = quat / quat.norm()
+    rot = p3d_quaternion_to_matrix(quat.unsqueeze(0))[0]
+    tfm = Transform3d(dtype=verts.dtype)
+    tfm = tfm.scale(float(scale)).rotate(rot).translate(*torch.tensor(translation, dtype=verts.dtype).tolist())
+    verts = tfm.transform_points(verts)
+    verts = verts @ torch.tensor(R_PYTORCH3D_TO_CAM, dtype=verts.dtype)
+    return verts[0].cpu().numpy().astype(np.float64)
 
 
 def transform_to_world(vertices: np.ndarray, c2w: np.ndarray) -> np.ndarray:
@@ -135,11 +150,10 @@ def main() -> None:
 
         rotation, translation, scale = load_pose(mesh_dir, stage1_root)
         vertices = np.asarray(mesh.vertices, dtype=np.float64)
-        vertices = apply_object_pose(vertices, rotation, translation, scale)
+        vertices = transform_mesh_vertices_notebook(vertices, rotation, translation, scale)
         if args.world_space:
             if c2w is None:
                 raise KeyError("camera json does not contain c2w")
-            vertices = pointmap_to_radegs_camera(vertices)
             vertices = transform_to_world(vertices, c2w)
 
         posed_mesh = trimesh.Trimesh(
@@ -180,7 +194,7 @@ def main() -> None:
         "mesh_root": str(mesh_root),
         "stage1_root": str(stage1_root) if stage1_root else None,
         "camera_json": str(args.camera_json),
-        "coordinate_system": "radegs_world" if args.world_space else "sam3d_pointmap_camera",
+        "coordinate_system": "radegs_world" if args.world_space else "radegs_camera",
         "num_instances": len(instances),
         "num_vertices": int(len(scene_mesh.vertices)),
         "num_faces": int(len(scene_mesh.faces)),

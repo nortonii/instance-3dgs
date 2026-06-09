@@ -29,6 +29,7 @@ def main() -> None:
     parser.add_argument("--image", default="")
     parser.add_argument("--output-prefix", required=True)
     parser.add_argument("--world-space", action="store_true")
+    parser.add_argument("--radegs-camera", action="store_true")
     parser.add_argument("--stride", type=int, default=1)
     parser.add_argument("--compare-mesh", default="")
     args = parser.parse_args()
@@ -47,6 +48,9 @@ def main() -> None:
         points = pointmap_to_radegs_camera(points)
         points = transform_to_world(points, c2w)
         coordinate_system = "radegs_world"
+    elif args.radegs_camera:
+        points = pointmap_to_radegs_camera(points)
+        coordinate_system = "radegs_camera"
     else:
         coordinate_system = "sam3d_pointmap_camera"
 
